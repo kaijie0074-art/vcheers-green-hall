@@ -13,7 +13,8 @@
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
-    "lucide-react": "latest",
+    "exceljs": "^4.4.0",
+    "lucide-react": "1.39.0",
     "react": "latest",
     "react-dom": "latest",
     "vite": "latest"
@@ -22,9 +23,9 @@
     "@playwright/test": "latest",
     "@types/node": "^26.4.0",
     "@types/react": "latest",
-    "@types/react-dom": "latest",
+    "@types/react-dom": "19.2.5",
     "typescript": "latest",
-    "vitest": "latest"
+    "vitest": "4.1.11"
   },
   "packageManager": "pnpm@11.19.0"
 }

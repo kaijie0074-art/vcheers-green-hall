@@ -1,12 +1,14 @@
 import {
+  canAdminMarkArrival,
+  canAdminUndoArrival,
   canUserCancel,
   hasUserOverlap,
-  isArrivalWindow,
   isBookingDate,
   selectPeakOccupancy,
   selectRangeRemaining,
   selectReservation,
 } from './selectors'
+import { isValidMemberNo, validateMemberNo } from './memberNo'
 import { isPastOrStarted, slotTimestamp } from './time'
 import type {
   AdminReservationAction,
@@ -88,6 +90,7 @@ function requireBoundMember(state: AppState, userId: string) {
     (item) => item.boundUserId === userId && item.status === 'active',
   )
   if (!member) throw new Error('请先绑定有效的 V cheers 会员编号')
+  validateMemberNo(member.memberNo)
   return member
 }
 
@@ -181,11 +184,11 @@ export function bindMember(
   const { now, id } = runtime(options)
   const user = requireUser(state, userId)
   if (user.role !== 'member') throw new Error('管理员账号不能绑定会员编号')
-  const memberNo = validateText(memberNoInput, '会员编号').toUpperCase()
+  const memberNo = validateMemberNo(memberNoInput)
   const phoneLastFour = validateText(phoneLastFourInput, '手机号后四位', 4)
   if (!/^\d{4}$/.test(phoneLastFour)) throw new Error('手机号后四位必须是 4 位数字')
 
-  const member = state.members.find((item) => item.memberNo.toUpperCase() === memberNo)
+  const member = state.members.find((item) => item.memberNo === memberNo)
   if (!member) throw new Error('会员编号不在已导入名册中')
   if (member.status !== 'active') throw new Error('该会员编号已停用，请联系管理员')
   if (!member.phone.endsWith(phoneLastFour)) throw new Error('会员编号与手机号后四位不匹配')
@@ -243,19 +246,19 @@ export function prepareMemberImport(
 
   rows.slice(0, 1000).forEach((row, index) => {
     const rowNumber = index + 2
-    const memberNo = row.memberNo.trim().toUpperCase()
+    const memberNo = typeof row.memberNo === 'string' ? row.memberNo.trim() : ''
     const name = row.name.trim()
     const phone = row.phone.trim()
     const status = normalizedMemberStatus(row.status)
-    if (!memberNo) issues.push({ rowNumber, message: '会员编号不能为空' })
+    if (!isValidMemberNo(memberNo)) issues.push({ rowNumber, message: '会员编号必须是 6 位数字，不含字母' })
     if (!name) issues.push({ rowNumber, message: '姓名不能为空' })
     if (!/^1[3-9]\d{9}$/.test(phone)) issues.push({ rowNumber, message: '手机号必须是有效的 11 位号码' })
     if (!status) issues.push({ rowNumber, message: '状态只能填写 active、disabled、启用或停用' })
     if (seenMemberNos.has(memberNo)) issues.push({ rowNumber, message: `会员编号 ${memberNo} 在文件中重复` })
     seenMemberNos.add(memberNo)
-    if (!memberNo || !name || !/^1[3-9]\d{9}$/.test(phone) || !status) return
+    if (!isValidMemberNo(memberNo) || !name || !/^1[3-9]\d{9}$/.test(phone) || !status) return
 
-    const existing = state.members.find((item) => item.memberNo.toUpperCase() === memberNo)
+    const existing = state.members.find((item) => item.memberNo === memberNo)
     sanitized.push({
       memberNo,
       name,
@@ -297,8 +300,15 @@ export function confirmMemberImport(
   if (preview.issues.length > 0) throw new Error('请先修正导入文件中的错误')
   if (preview.rows.length === 0) throw new Error('没有可导入的会员数据')
 
+  // Preview data can be stale or edited: revalidate against current state and retain
+  // current bindings instead of accepting binding fields supplied with the preview.
+  const verified = prepareMemberImport(state, preview.rows, preview.fileName, { now })
+  if (verified.issues.length > 0) {
+    throw new Error(`请先修正导入文件中的错误：${verified.issues[0].message}`)
+  }
+
   const next = clone(state)
-  for (const row of preview.rows) {
+  for (const row of verified.rows) {
     const existing = next.members.find((item) => item.memberNo === row.memberNo)
     if (existing) Object.assign(existing, row, { boundUserId: existing.boundUserId, updatedAt: now })
     else next.members.push({ ...row, importedAt: now, updatedAt: now })
@@ -319,7 +329,7 @@ export function confirmMemberImport(
       operatorId: adminUserId,
       action: 'import_members',
       targetId: preview.fileName,
-      after: `${preview.insertedCount} inserted, ${preview.updatedCount} updated`,
+      after: `${verified.insertedCount} inserted, ${verified.updatedCount} updated`,
     },
     now,
     id,
@@ -427,8 +437,8 @@ export function updateReservationStatus(
   const target = requireReservation(next, reservationId)
 
   if (action === 'mark-arrived') {
-    if (reservation.status !== 'booked' || !isArrivalWindow(reservation, now)) {
-      throw new Error('当前不在可标记到场的时间窗口')
+    if (!canAdminMarkArrival(reservation, now)) {
+      throw new Error('只能为今天或过去的已预约记录标记到场')
     }
     target.status = 'arrived'
     target.arrivedBy = adminUserId
@@ -446,8 +456,8 @@ export function updateReservationStatus(
       id,
     )
   } else if (action === 'undo-arrived') {
-    if (reservation.status !== 'arrived' || !isArrivalWindow(reservation, now)) {
-      throw new Error('当前不能撤销到场标记')
+    if (!canAdminUndoArrival(reservation, now)) {
+      throw new Error('只能为今天或过去的已到场记录撤销到场')
     }
     target.status = 'booked'
     delete target.arrivedBy
@@ -466,8 +476,8 @@ export function updateReservationStatus(
     )
   } else if (action === 'cancel') {
     const cancelReason = validateText(reason, '取消原因', 200)
-    if (reservation.status !== 'booked' || current >= startsAt) {
-      throw new Error('只能取消尚未开始的已预约记录')
+    if (reservation.status !== 'booked') {
+      throw new Error('只能取消已预约记录，已到场记录请先撤销到场')
     }
     target.status = 'canceled'
     target.canceledBy = 'admin'

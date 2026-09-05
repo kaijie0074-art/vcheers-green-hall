@@ -1,4 +1,4 @@
-import { bookingDateKeys, isPastOrStarted, slotTimestamp } from './time'
+import { bookingDateKeys, isPastOrStarted, shanghaiDateKey, slotTimestamp } from './time'
 import type { AppState, Reservation } from './types'
 
 export const isActiveReservation = (reservation: Reservation) =>
@@ -115,11 +115,13 @@ export function canUserCancel(reservation: Reservation, now: string | Date) {
   )
 }
 
-export function isArrivalWindow(reservation: Reservation, now: string | Date) {
-  const current = now instanceof Date ? now.getTime() : Date.parse(now)
-  const start = slotTimestamp(reservation.date, reservation.startHour)
-  const end = slotTimestamp(reservation.date, reservation.endHour)
-  return current >= start - 30 * 60 * 1000 && current < end
+/** Staff may record or correct attendance on the booking day and afterwards. */
+export function canAdminMarkArrival(reservation: Reservation, now: string | Date) {
+  return reservation.status === 'booked' && reservation.date <= shanghaiDateKey(now)
+}
+
+export function canAdminUndoArrival(reservation: Reservation, now: string | Date) {
+  return reservation.status === 'arrived' && reservation.date <= shanghaiDateKey(now)
 }
 
 export function isBookingDate(state: AppState, date: string, now: string | Date) {

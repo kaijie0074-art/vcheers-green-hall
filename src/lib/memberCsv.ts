@@ -1,7 +1,7 @@
 import type { MemberImportRow } from '../domain/types'
 
 const aliases = {
-  memberNo: ['会员编号', 'member_no', 'memberno'],
+  memberNo: ['VC-ID', '会员编号', 'member_no', 'memberno'].map((alias) => alias.toLowerCase()),
   name: ['姓名', 'name'],
   phone: ['手机号', 'phone', 'mobile'],
   status: ['状态', 'status'],
@@ -66,9 +66,9 @@ export function parseMemberCsv(text: string): MemberImportRow[] {
 
 export function downloadMemberTemplate() {
   const content = [
-    '\uFEFF会员编号,姓名,手机号,状态',
-    'VC2026091001,示例会员一,13800138001,active',
-    'VC2026091002,示例会员二,13900139002,active',
+    '\uFEFFVC-ID,姓名,手机号,状态',
+    '100001,示例会员一,13800138001,active',
+    '100002,示例会员二,13900139002,active',
   ].join('\r\n')
   const blob = new Blob([content], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)

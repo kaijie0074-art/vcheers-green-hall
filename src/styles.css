@@ -758,7 +758,11 @@ body:has(.admin-auth-stage) { background: #f4f5f1; }
 }
 .admin-site .admin-record-row { min-height: 96px; padding: 14px 12px; border-bottom-color: var(--admin-line); }
 .admin-site .admin-record-row strong { font-size: 15px; }
-.admin-site .admin-record-row small { font-size: 12px; }
+.admin-site .admin-record-row small { font-size: 12px; overflow-wrap: anywhere; }
+.admin-site .records-heading { flex-wrap: wrap; }
+.admin-site .records-title { display: flex; align-items: baseline; gap: 10px; }
+.admin-site .records-title > span { color: var(--admin-muted); font-size: 14px; }
+.mobile-field-label { display: none; }
 .admin-site .phone-cell .text-button { color: var(--admin-green); }
 .admin-site .empty-state { padding: 28px 12px; text-align: left; background: transparent; border-radius: 0; }
 .admin-site .privacy-notice {
@@ -847,6 +851,26 @@ body:has(.admin-auth-stage) { background: #f4f5f1; }
   .admin-site .member-admin-grid { padding-top: 28px; }
   .admin-site .records-card,
   .admin-site .member-registry-card { min-width: 0; }
-  .admin-site .admin-record-table,
   .admin-site .member-table { min-width: 760px; }
+  .admin-site .admin-table-scroll { overflow: visible; }
+  .admin-site .admin-record-table { min-width: 0; }
+  .admin-site .admin-record-head { display: none; }
+  .admin-site .admin-record-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 16px 12px;
+    padding: 20px 0;
+  }
+  .admin-site .admin-record-row:first-of-type { border-top: 1px solid var(--admin-line); }
+  .admin-site .admin-record-row strong { font-size: 16px; }
+  .admin-site .admin-record-row .record-person { grid-column: 2; grid-row: 1; }
+  .admin-site .admin-record-row .record-member { grid-column: 2; grid-row: 2; }
+  .admin-site .admin-record-row .phone-cell { grid-column: 1; grid-row: 2; }
+  .admin-site .admin-record-row .row-actions {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .admin-site .row-actions button { min-height: 44px; font-size: 16px; }
+  .admin-site .mobile-field-label { display: inline; color: var(--admin-muted); font-size: 13px; font-weight: 400; }
 }

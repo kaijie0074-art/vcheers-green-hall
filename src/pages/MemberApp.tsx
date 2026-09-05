@@ -302,7 +302,7 @@ function MemberBindingScreen({
   onBind: (memberNo: string, phoneLastFour: string) => boolean
   onLogout: () => boolean
 }) {
-  const [memberNo, setMemberNo] = useState('VC2026090301')
+  const [memberNo, setMemberNo] = useState('100001')
   const [phoneLastFour, setPhoneLastFour] = useState('8001')
 
   return (
@@ -311,11 +311,11 @@ function MemberBindingScreen({
         <span className="auth-icon"><Link2 size={31} /></span>
         <h1>绑定会员编号</h1>
         <form onSubmit={(event) => { event.preventDefault(); onBind(memberNo, phoneLastFour) }}>
-          <label><span>会员编号</span><input value={memberNo} onChange={(event) => setMemberNo(event.target.value)} autoCapitalize="characters" /></label>
+          <label><span>会员编号</span><input type="text" inputMode="numeric" placeholder="6 位数字" value={memberNo} onChange={(event) => setMemberNo(event.target.value)} autoCapitalize="off" spellCheck={false} /></label>
           <label><span>预留手机号后四位</span><input value={phoneLastFour} onChange={(event) => setPhoneLastFour(event.target.value.replace(/\D/g, '').slice(0, 4))} inputMode="numeric" maxLength={4} /></label>
           <button type="submit" className="primary-button full-button">确认绑定</button>
         </form>
-        <div className="demo-credential"><strong>演示资料</strong><span>会员编号 VC2026090301，手机号后四位 8001</span></div>
+        <div className="demo-credential"><strong>演示资料</strong><span>会员编号 100001，手机号后四位 8001</span></div>
         <button type="button" className="text-button" onClick={onLogout}><LogOut size={17} />退出微信登录</button>
       </section>
     </main>

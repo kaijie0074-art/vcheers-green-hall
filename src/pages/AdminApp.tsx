@@ -17,7 +17,8 @@ import { useEffect, useMemo, useState, type ChangeEvent } from 'react'
 import { Dialog } from '../components/Dialog'
 import { StatusBadge } from '../components/StatusBadge'
 import {
-  isArrivalWindow,
+  canAdminMarkArrival,
+  canAdminUndoArrival,
   maskPhone,
   selectAdminUser,
   selectCapacity,
@@ -29,6 +30,7 @@ import { addDays, adminDateBounds, formatHour, formatLongDate, slotTimestamp } f
 import type { Reservation } from '../domain/types'
 import type { MemberImportPreview } from '../domain/types'
 import { downloadMemberTemplate, parseMemberCsv } from '../lib/memberCsv'
+import { downloadDailyReservations } from '../lib/reservationExport'
 import { useCurrentTime } from '../lib/useCurrentTime'
 
 export function AdminApp() {
@@ -41,6 +43,8 @@ export function AdminApp() {
   const [cancelTarget, setCancelTarget] = useState<Reservation | null>(null)
   const [cancelReason, setCancelReason] = useState('')
   const [section, setSection] = useState<'bookings' | 'members'>('bookings')
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState('')
   const admin = selectAdminUser(store.state)
   const reservations = selectReservationsForDate(store.state, selectedDate)
   const capacity = selectCapacity(store.state, selectedDate)
@@ -59,6 +63,19 @@ export function AdminApp() {
   const revealPhone = (reservationId: string) => {
     if (!store.revealPhone(reservationId)) return
     setVisiblePhones((current) => new Set(current).add(reservationId))
+  }
+
+  const downloadRecords = async () => {
+    if (exporting) return
+    setExporting(true)
+    setExportError('')
+    try {
+      await downloadDailyReservations(store.state, selectedDate)
+    } catch (cause) {
+      setExportError(cause instanceof Error ? cause.message : '下载失败，请重试')
+    } finally {
+      setExporting(false)
+    }
   }
 
   if (!admin) {
@@ -84,7 +101,7 @@ export function AdminApp() {
 
       <section className="admin-page-heading">
         <div><p>绿厅</p><h1>{section === 'bookings' ? '预约管理' : '会员名册'}</h1></div>
-        <a className="admin-member-link" href="/member">用户端 <ChevronRight size={18} /></a>
+        <a className="admin-member-link" href={import.meta.env.BASE_URL === '/' ? '/member' : `${import.meta.env.BASE_URL}?view=member`}>用户端 <ChevronRight size={18} /></a>
       </section>
 
       <nav className="admin-section-tabs" aria-label="管理端功能">
@@ -94,7 +111,7 @@ export function AdminApp() {
 
       {section === 'bookings' ? <>
         <section className="date-control-panel">
-          <div className="admin-block-heading"><h2>日期</h2>{!editableDate && <span className="readonly-pill">只读</span>}</div>
+          <div className="admin-block-heading"><h2>日期</h2></div>
           <div className="admin-date-controls">
             <button type="button" className="icon-square-button" disabled={selectedDate <= bounds.min} onClick={() => changeDate(addDays(selectedDate, -1))} aria-label="前一天"><ChevronLeft size={21} /></button>
             <input data-testid="admin-date-input" type="date" min={bounds.min} max={bounds.max} value={selectedDate} onChange={(event) => changeDate(event.target.value)} aria-label="管理日期" />
@@ -106,7 +123,7 @@ export function AdminApp() {
 
         <div className="admin-overview-grid">
         <section className="capacity-card">
-          <div className="admin-block-heading"><h2>开放座位</h2></div>
+          <div className="admin-block-heading"><h2>开放座位</h2>{!editableDate && <span className="readonly-pill">容量只读</span>}</div>
           <div className="capacity-metrics">
             <article><span>当前容量</span><strong>{capacity}</strong></article>
             <article><span>峰值占用</span><strong>{peak}</strong></article>
@@ -122,10 +139,11 @@ export function AdminApp() {
         </section>
 
         <section className="records-card">
-          <div className="admin-block-heading split-heading">
-            <h2>预约记录</h2>
-            <strong>{reservations.length} 条</strong>
+          <div className="admin-block-heading records-heading">
+            <div className="records-title"><h2>预约记录</h2><span>{reservations.length} 条</span></div>
+            <button type="button" className="secondary-button" disabled={exporting} onClick={() => void downloadRecords()}><Download size={18} />{exporting ? '正在生成…' : '下载当日表格'}</button>
           </div>
+          {exportError && <p className="inline-error" role="alert">{exportError}</p>}
           <div className="admin-table-scroll">
             <div className="admin-record-table">
               <div className="admin-record-head"><span>状态 / 时段</span><span>预约人</span><span>联系方式</span><span>会员编号</span><span>操作</span></div>
@@ -277,21 +295,22 @@ function ReservationRow({
 }) {
   const current = now.getTime()
   const startsAt = slotTimestamp(reservation.date, reservation.startHour)
-  const arrivalWindow = isArrivalWindow(reservation, now)
+  const canMarkArrival = canAdminMarkArrival(reservation, now)
+  const canUndoArrival = canAdminUndoArrival(reservation, now)
   const beforeStart = current < startsAt
 
   return (
     <article className="admin-record-row">
       <div className="record-time"><StatusBadge status={reservation.status} /><strong>{formatHour(reservation.startHour)}–{formatHour(reservation.endHour)}</strong><small>{reservation.durationHours} 小时</small></div>
-      <div><strong>{reservation.name}</strong><small>预约于 {new Date(reservation.createdAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false })}</small></div>
+      <div className="record-person"><strong>{reservation.name}</strong><small>预约于 {new Date(reservation.createdAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false })}</small></div>
       <div className="phone-cell"><strong>{phoneVisible ? reservation.phone : maskPhone(reservation.phone)}</strong><button type="button" className="text-button" onClick={phoneVisible ? onHide : onReveal}>{phoneVisible ? <><EyeOff size={16} />隐藏</> : <><Eye size={16} />查看</>}</button></div>
-      <div><strong>{reservation.memberNo}</strong>{reservation.cancelReason && <small>原因：{reservation.cancelReason}</small>}</div>
+      <div className="record-member"><strong><span className="mobile-field-label">VC-ID </span>{reservation.memberNo}</strong>{reservation.cancelReason && <small>原因：{reservation.cancelReason}</small>}</div>
       <div className="row-actions">
-        {reservation.status === 'booked' && arrivalWindow && <button type="button" className="success-button" onClick={() => onAction('mark-arrived')}><Check size={17} />标记到场</button>}
-        {reservation.status === 'arrived' && arrivalWindow && <button type="button" className="secondary-button small-button" onClick={() => onAction('undo-arrived')}><RotateCcw size={16} />撤销到场</button>}
-        {reservation.status === 'booked' && beforeStart && <button type="button" className="danger-ghost-button small-button" onClick={() => onAction('cancel')}><XCircle size={17} />取消</button>}
+        {reservation.status === 'booked' && <button type="button" className="success-button" disabled={!canMarkArrival} title={!canMarkArrival ? '预约当天可标记到场' : undefined} onClick={() => onAction('mark-arrived')}><Check size={17} />标记到场</button>}
+        {canUndoArrival && <button type="button" className="secondary-button small-button" onClick={() => onAction('undo-arrived')}><RotateCcw size={16} />撤销到场</button>}
+        {reservation.status === 'booked' && <button type="button" className="danger-ghost-button small-button" onClick={() => onAction('cancel')}><XCircle size={17} />取消</button>}
         {reservation.status === 'canceled' && beforeStart && <button type="button" className="secondary-button small-button" onClick={() => onAction('restore')}><RotateCcw size={16} />恢复</button>}
-        {!((reservation.status === 'booked' && (arrivalWindow || beforeStart)) || (reservation.status === 'arrived' && arrivalWindow) || (reservation.status === 'canceled' && beforeStart)) && <span className="action-hint">无可用操作</span>}
+        {reservation.status === 'canceled' && !beforeStart && <span className="action-hint">已取消</span>}
       </div>
     </article>
   )

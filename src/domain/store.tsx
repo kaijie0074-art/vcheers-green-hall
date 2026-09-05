@@ -1,5 +1,6 @@
 import { createContext, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createSeedState } from './seed'
+import { migrateDemoMemberNos } from './migrations'
 import {
   bindMember as transitionBindMember,
   cancelReservation as transitionCancelReservation,
@@ -83,7 +84,7 @@ function readInitialState() {
     const saved = sessionStorage.getItem(STORAGE_KEY)
     if (!saved) return createSeedState()
     const parsed: unknown = JSON.parse(saved)
-    return isCurrentSchema(parsed) ? parsed : createSeedState()
+    return isCurrentSchema(parsed) ? migrateDemoMemberNos(parsed) : createSeedState()
   } catch {
     return createSeedState()
   }
