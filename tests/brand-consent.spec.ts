@@ -131,9 +131,14 @@ test('两项勾选所有组合、阅读不勾选、焦点与滚动恢复、成�
     await link.click()
     const dialog = page.getByRole('dialog', { name: title, exact: true })
     await expect(dialog.getByRole('button', { name: '关闭', exact: true })).toBeFocused()
-    // No forced reading to the bottom: closing immediately is allowed.
+    // Keyboard users can focus and scroll the document, then return to Close.
     await page.keyboard.press('Tab')
+    await expect(dialog.getByRole('document')).toBeFocused()
+    await page.keyboard.press('PageDown')
+    await expect.poll(() => dialog.getByRole('document').evaluate((element) => element.scrollTop)).toBeGreaterThan(0)
+    await page.keyboard.press('Shift+Tab')
     await expect(dialog.getByRole('button', { name: '关闭', exact: true })).toBeFocused()
+    // Reading to the bottom is never required.
     await page.keyboard.press('Escape')
     await expect(link).toBeFocused()
     expect(Math.abs(await page.evaluate(() => window.scrollY) - scrollBefore)).toBeLessThanOrEqual(1)

@@ -5,7 +5,7 @@ import { Dialog } from './Dialog'
 export function AgreementDialog({ kind, onClose }: { kind: AgreementKind | null; onClose: () => void }) {
   const content = kind === 'rules' ? spaceRules : privacyNotice
   return (
-    <Dialog open={kind !== null} onClose={onClose} title={content.title} wide>
+    <Dialog open={kind !== null} onClose={onClose} title={content.title} wide reading>
       <article className="agreement-content">
         <p className="agreement-version">版本 {content.version}</p>
         {kind === 'rules' ? <>

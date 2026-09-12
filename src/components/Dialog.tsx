@@ -7,12 +7,14 @@ export function Dialog({
   title,
   children,
   wide = false,
+  reading = false,
 }: {
   open: boolean
   onClose: () => void
   title: string
   children: ReactNode
   wide?: boolean
+  reading?: boolean
 }) {
   const panelRef = useRef<HTMLElement>(null)
   const onCloseRef = useRef(onClose)
@@ -26,7 +28,7 @@ export function Dialog({
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
-    const focusableSelector = 'input:not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), a[href]'
+    const focusableSelector = 'input:not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), a[href], [tabindex="0"]'
     const focusable = () => Array.from(panelRef.current?.querySelectorAll<HTMLElement>(focusableSelector) ?? [])
     const initial = panelRef.current?.querySelector<HTMLElement>('.dialog-body input, .dialog-body textarea, .dialog-body select, .dialog-body button')
       ?? panelRef.current?.querySelector<HTMLElement>('.dialog-header button')
@@ -75,7 +77,7 @@ export function Dialog({
             <X size={22} />
           </button>
         </header>
-        <div className="dialog-body">{children}</div>
+        <div className="dialog-body" tabIndex={reading ? 0 : undefined} role={reading ? 'document' : undefined} aria-label={reading ? `${title}正文` : undefined}>{children}</div>
       </section>
     </div>
   )

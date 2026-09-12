@@ -241,6 +241,7 @@ label b { color: var(--red); }
 .dialog-header { flex-shrink: 0; min-height: 76px; padding: 12px 20px 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--line); }
 .dialog-header h2 { margin: 0; font-size: 1.375rem; line-height: 1.4; }
 .dialog-body { padding: 24px; overflow-y: auto; overscroll-behavior: contain; }
+.dialog-body:focus-visible { outline: 2px solid var(--purple); outline-offset: -4px; }
 .icon-button { width: 44px; height: 44px; flex-shrink: 0; display: grid; place-items: center; color: var(--purple); background: var(--purple-soft); border: 0; border-radius: 50%; }
 .dialog-actions { margin-top: 24px; display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 12px; }
 .success-content { text-align: center; }
