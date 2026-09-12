@@ -1,13 +1,15 @@
 import {
   Armchair,
   CheckCircle2,
-  Link2,
   LogOut,
   MessageCircle,
   Trash2,
 } from 'lucide-react'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Dialog } from '../components/Dialog'
+import { BrandLogo } from '../components/BrandLogo'
+import { AgreementDialog, AgreementLinks } from '../components/AgreementDialog'
+import { type AgreementKind } from '../content/agreements'
 import { StatusBadge } from '../components/StatusBadge'
 import {
   canUserCancel,
@@ -79,8 +81,7 @@ export function MemberApp() {
     <main className="site-shell member-site">
       <header className="member-topbar">
         <div className="member-wordmark">
-          <span>V</span>
-          <div><strong>V cheers</strong><small>绿厅</small></div>
+          <BrandLogo />
         </div>
         <div className="member-account">
           <div><strong>{currentMember.name}</strong><small>{currentMember.memberNo}</small></div>
@@ -191,15 +192,17 @@ export function MemberApp() {
           member={currentMember}
           disabled={selectedHour === null || rangeRemaining === null || rangeRemaining < 1}
           summary={selectedHour === null ? '尚未选择时段' : `${formatHour(selectedHour)}—${formatHour(selectedHour + durationHours)} · ${durationHours} 小时`}
-          onSubmit={(privacyAccepted) => {
-            if (selectedHour === null) return
+          onSubmit={(privacyAccepted, rulesAccepted) => {
+            if (selectedHour === null) return false
             const id = store.createReservation({
               date: selectedDate,
               startHour: selectedHour,
               durationHours,
               privacyAccepted,
+              rulesAccepted,
             })
             if (id) setSuccessId(id)
+            return Boolean(id)
           }}
         />
       </div>
@@ -259,13 +262,18 @@ function BookingForm({
   member: { name: string; phone: string; memberNo: string }
   disabled: boolean
   summary: string
-  onSubmit: (privacyAccepted: boolean) => void
+  onSubmit: (privacyAccepted: boolean, rulesAccepted: boolean) => boolean
 }) {
   const [privacyAccepted, setPrivacyAccepted] = useState(false)
+  const [rulesAccepted, setRulesAccepted] = useState(false)
+  const [reading, setReading] = useState<AgreementKind | null>(null)
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
-    onSubmit(privacyAccepted)
+    if (onSubmit(privacyAccepted, rulesAccepted)) {
+      setPrivacyAccepted(false)
+      setRulesAccepted(false)
+    }
   }
 
   return (
@@ -276,20 +284,44 @@ function BookingForm({
           <span>预约人</span>
           <div><strong>{member.name}</strong><p>{member.memberNo} · {member.phone.replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2')}</p></div>
         </div>
-        <label className="privacy-check"><input type="checkbox" checked={privacyAccepted} onChange={(event) => setPrivacyAccepted(event.target.checked)} /><span>同意预约信息使用说明</span></label>
-        <button type="submit" className="primary-button full-button" disabled={disabled || !privacyAccepted}>确认预约</button>
+        <div className="consent-list">
+          <ConsentCheck kind="privacy" title="预约信息使用说明" checked={privacyAccepted} onChange={setPrivacyAccepted} onRead={() => setReading('privacy')} />
+          <ConsentCheck kind="rules" title="空间使用守则" checked={rulesAccepted} onChange={setRulesAccepted} onRead={() => setReading('rules')} />
+        </div>
+        <button type="submit" className="primary-button full-button" disabled={disabled || !privacyAccepted || !rulesAccepted}>确认预约</button>
       </form>
+      <AgreementDialog kind={reading} onClose={() => setReading(null)} />
     </aside>
   )
+}
+
+function ConsentCheck({ kind, title, checked, onChange, onRead }: {
+  kind: AgreementKind
+  title: string
+  checked: boolean
+  onChange: (checked: boolean) => void
+  onRead: () => void
+}) {
+  // Reading is a separate button, outside the label: it never toggles consent.
+  return <div className="consent-check">
+    <label className="consent-toggle">
+      <input id={`${kind}-consent`} type="checkbox" name={`${kind}Accepted`} checked={checked} onChange={(event) => onChange(event.target.checked)} aria-label={`我已阅读并同意《${title}》`} />
+    </label>
+    <div>
+      <label htmlFor={`${kind}-consent`}>我已阅读并同意</label>
+      <button type="button" className="agreement-link" onClick={onRead} aria-haspopup="dialog">《{title}》</button>
+    </div>
+  </div>
 }
 
 function MemberLoginScreen({ onLogin }: { onLogin: () => boolean }) {
   return (
     <main className="auth-stage">
       <section className="auth-card">
-        <span className="auth-icon wechat-icon"><MessageCircle size={32} /></span>
+        <BrandLogo />
         <h1>绿厅座位预约</h1>
         <button type="button" className="wechat-button" onClick={onLogin}><MessageCircle size={22} />微信授权登录</button>
+        <AgreementLinks />
       </section>
     </main>
   )
@@ -308,7 +340,7 @@ function MemberBindingScreen({
   return (
     <main className="auth-stage">
       <section className="auth-card binding-card">
-        <span className="auth-icon"><Link2 size={31} /></span>
+        <BrandLogo />
         <h1>绑定会员编号</h1>
         <form onSubmit={(event) => { event.preventDefault(); onBind(memberNo, phoneLastFour) }}>
           <label><span>会员编号</span><input type="text" inputMode="numeric" placeholder="6 位数字" value={memberNo} onChange={(event) => setMemberNo(event.target.value)} autoCapitalize="off" spellCheck={false} /></label>
@@ -317,6 +349,7 @@ function MemberBindingScreen({
         </form>
         <div className="demo-credential"><strong>演示资料</strong><span>会员编号 100001，手机号后四位 8001</span></div>
         <button type="button" className="text-button" onClick={onLogout}><LogOut size={17} />退出微信登录</button>
+        <AgreementLinks />
       </section>
     </main>
   )

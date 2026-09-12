@@ -46,6 +46,11 @@ export interface DailyCapacity {
   updatedAt?: string
 }
 
+export interface ConsentSnapshot {
+  version: string
+  acceptedAt: string
+}
+
 export interface Reservation {
   id: string
   spaceId: string
@@ -58,6 +63,9 @@ export interface Reservation {
   phone: string
   memberNo: string
   privacyAccepted: true
+  // Missing on historical records; do not infer consent from privacyAccepted.
+  privacyConsent?: ConsentSnapshot
+  rulesConsent?: ConsentSnapshot
   status: ReservationStatus
   idempotencyKey: string
   createdAt: string
@@ -110,6 +118,7 @@ export interface ReservationInput {
   startHour: number
   durationHours: number
   privacyAccepted: boolean
+  rulesAccepted: boolean
   idempotencyKey: string
 }
 

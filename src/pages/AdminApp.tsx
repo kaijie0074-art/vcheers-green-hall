@@ -15,6 +15,8 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useState, type ChangeEvent } from 'react'
 import { Dialog } from '../components/Dialog'
+import { BrandLogo } from '../components/BrandLogo'
+import { AgreementLinks } from '../components/AgreementDialog'
 import { StatusBadge } from '../components/StatusBadge'
 import {
   canAdminMarkArrival,
@@ -90,8 +92,7 @@ export function AdminApp() {
     <main className="site-shell admin-site">
       <header className="admin-topbar">
         <div className="admin-wordmark">
-          <span>V</span>
-          <div><strong>V cheers</strong><small>绿厅管理端</small></div>
+          <BrandLogo />
         </div>
         <div className="admin-account">
           <div><strong>{admin.name}</strong><small>管理员</small></div>
@@ -192,9 +193,10 @@ function AdminLoginScreen({ onLogin }: { onLogin: () => boolean }) {
   return (
     <main className="auth-stage admin-auth-stage">
       <section className="auth-card">
-        <span className="auth-icon"><ShieldCheck size={32} /></span>
+        <BrandLogo />
         <h1>管理员登录</h1>
         <button type="button" className="wechat-button" onClick={onLogin}><MessageCircle size={22} />微信管理员登录</button>
+        <AgreementLinks />
       </section>
     </main>
   )

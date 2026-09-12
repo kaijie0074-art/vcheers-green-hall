@@ -23,12 +23,14 @@ export function Dialog({
 
   useEffect(() => {
     if (!open) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
     const focusableSelector = 'input:not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), a[href]'
     const focusable = () => Array.from(panelRef.current?.querySelectorAll<HTMLElement>(focusableSelector) ?? [])
     const initial = panelRef.current?.querySelector<HTMLElement>('.dialog-body input, .dialog-body textarea, .dialog-body select, .dialog-body button')
       ?? panelRef.current?.querySelector<HTMLElement>('.dialog-header button')
-    initial?.focus()
+    initial?.focus({ preventScroll: true })
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault()
@@ -51,7 +53,8 @@ export function Dialog({
     document.addEventListener('keydown', handleKeyDown)
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
-      previousFocus?.focus()
+      document.body.style.overflow = previousOverflow
+      previousFocus?.focus({ preventScroll: true })
     }
   }, [open])
 

@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { PRIVACY_VERSION, RULES_VERSION } from '../content/agreements'
+import type { ReservationInput } from './types'
 import { ADMIN_USER_ID, CURRENT_USER_ID, createSeedState } from './seed'
 import { canAdminMarkArrival, canAdminUndoArrival, selectOccupiedCount, selectRemaining } from './selectors'
 import {
@@ -27,6 +29,7 @@ function input(overrides: Partial<Parameters<typeof createReservation>[2]> = {})
     startHour: 13,
     durationHours: 1,
     privacyAccepted: true,
+    rulesAccepted: true,
     idempotencyKey: 'request-1',
     ...overrides,
   }
@@ -40,6 +43,47 @@ function boundState() {
 }
 
 describe('共享座位预约规则', () => {
+  it.each([
+    [false, false, '预约信息使用说明'],
+    [false, true, '预约信息使用说明'],
+    [true, false, '空间使用守则'],
+  ])('领域层拒绝不完整确认：privacy=%s / rules=%s', (privacyAccepted, rulesAccepted, message) => {
+    const state = boundState()
+    const before = structuredClone(state)
+    expect(() => createReservation(state, CURRENT_USER_ID, input({ privacyAccepted, rulesAccepted }), { now: NOW })).toThrow(message)
+    expect(state).toEqual(before)
+  })
+
+  it.each(['privacyAccepted', 'rulesAccepted'] as const)('绕过界面也不能省略或伪造 %s', (field) => {
+    for (const value of [undefined, null, 'true', 1]) {
+      const forged = { ...input(), [field]: value } as unknown as ReservationInput
+      expect(() => createReservation(boundState(), CURRENT_USER_ID, forged, { now: NOW })).toThrow('请先同意')
+    }
+  })
+
+  it('双方明确同意时分别保存正文版本和本次确认时间，不改旧记录', () => {
+    const state = boundState()
+    const original = structuredClone(state)
+    const next = createReservation(state, CURRENT_USER_ID, input(), { now: NOW, id: ids() })
+    expect(next.reservations[0].privacyConsent).toEqual({ version: PRIVACY_VERSION, acceptedAt: NOW })
+    expect(next.reservations[0].rulesConsent).toEqual({ version: RULES_VERSION, acceptedAt: NOW })
+    expect(next.reservations.slice(1)).toEqual(original.reservations)
+    expect(next.members).toEqual(original.members)
+    expect(next.auditLogs.slice(1)).toEqual(original.auditLogs)
+    expect(state).toEqual(original)
+    expect(next.reservations.slice(1).every((record) => record.privacyConsent === undefined && record.rulesConsent === undefined)).toBe(true)
+  })
+
+  it('幂等重试不覆盖首次确认时间，状态操作也保留确认记录', () => {
+    const next = createReservation(boundState(), CURRENT_USER_ID, input(), { now: NOW, id: ids() })
+    const later = '2026-09-03T04:30:00.000Z'
+    const retried = createReservation(next, CURRENT_USER_ID, input(), { now: later })
+    expect(retried).toBe(next)
+    const canceled = cancelReservation(next, next.reservations[0].id, CURRENT_USER_ID, { now: later })
+    expect(canceled.reservations[0].privacyConsent).toEqual(next.reservations[0].privacyConsent)
+    expect(canceled.reservations[0].rulesConsent).toEqual(next.reservations[0].rulesConsent)
+  })
+
   it('连续预约会占用覆盖到的每个小时', () => {
     const next = createReservation(
       boundState(),

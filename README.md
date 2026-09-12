@@ -26,6 +26,29 @@ pnpm dev
 
 演示数据与操作结果仅保存在当前浏览器标签页的 `sessionStorage`。点击顶部“重置数据”可恢复初始状态。原型使用虚构资料，请勿录入真实个人信息。
 
+## 品牌与预约前确认
+
+用户端、管理端、登录和绑定页面共用暖白、品牌紫 `#784a99`、草绿 `#78bb2e` 的样式体系，薄荷和橙黄仅作辅助。`BrandLogo` 使用新规范中的完整矢量字标，也支持独立 V 标志；浏览器图标为紫底 V 标志。原始线条、比例和至少 15% 字标高度的安全留白保留在 SVG 内，不使用字体重画 Logo。
+
+矢量来自用户提供的《V cheers-logo规范0911(1).pdf》第 3 页，`scripts/extract_brand.py` 可通过 `pypdf` 从原 PDF 重建 `src/assets/` 和 `public/favicon.svg`。脚本保留各次原始填充操作、复合路径与镂空，不发布原 PDF。
+
+每笔新预约须分别同意《预约信息使用说明》和《空间使用守则》，默认均不勾选。点击标题只打开正文，不改变勾选；正文可滚动、随时关闭，不设倒计时或强制滚动。成功后清空两项确认，下一笔重新勾选；失败时保留时段和勾选。未登录页面也可直接阅读两份本地正文。
+
+两份正文独立维护于 `src/content/agreements.ts`，首版均为 `2026-09-12`。空间守则完整保留原 DOCX 的标题、引言、9 条约定、结语及联系方式，仅调整阅读排版；文中签到等要求不新增为本次业务功能。预约信息使用说明对应当前体验版的会话存储、管理查看和下载能力，不等同于正式运营版隐私政策。
+
+领域输入保留 `privacyAccepted`，新增必填 `rulesAccepted`，两者必须严格为 `true`。领域层在新预约中分别写入 `privacyConsent` 和 `rulesConsent`，结构为 `{ version, acceptedAt }`，时间由创建预约时的领域运行时生成，不接受调用方指定版本或确认时间。
+
+保留原 `vcheers-green-hall-booking-state-v4` 存储键与结构版本。历史记录的两项快照可缺省，旧的 `privacyAccepted: true` 不会被追认为同意新正文；会员绑定、预约、操作日志不会因本次升级清空。每日 Excel 仍只有既定六列，不加入确认信息。
+
+## GitHub Pages 预览
+
+- [用户预约](https://kaijie0074-art.github.io/vcheers-green-hall/?view=member)
+- [管理端](https://kaijie0074-art.github.io/vcheers-green-hall/?view=admin)
+
+推送 `main` 后由 `.github/workflows/deploy-pages.yml` 构建和部署。静态资源通过 Vite 导入或 `%BASE_URL%` 引用，兼容 `/vcheers-green-hall/` 子路径。可先运行 `pnpm exec vite build --base=/vcheers-green-hall/` 检查发布构建。
+
+`node scripts/verify-preview.mjs https://kaijie0074-art.github.io/vcheers-green-hall/` 可在独立演示会话中验证公网桌面/手机资源、双确认、预约、到场/取消和六列表格；截图与下载保存到系统临时目录，不改其他浏览器的会话。
+
 ## 验证
 
 ```bash
@@ -34,8 +57,8 @@ pnpm test
 pnpm test:e2e
 ```
 
-- 领域测试覆盖六位会员编号、会员绑定、名册导入、连续时段容量、重叠校验、幂等提交、取消释放、到场补记、操作审计和表格导出。
-- 浏览器测试覆盖登录绑定、桌面及移动端预约闭环、管理端名册导入、容量与状态操作、页面溢出和关键字号。
+- 领域测试覆盖两项确认的所有组合、绕过界面的缺省/伪造输入、确认快照、历史兼容，以及六位会员编号、绑定、导入、容量、重叠、幂等、取消、到场、审计和表格导出。
+- 浏览器测试覆盖未登录阅读、正文完整性、阅读不勾选、焦点和滚动恢复、成功后重置、失败保留、旧会话兼容、桌面/手机完整操作链路、页面溢出、关键字号和 44px 点击区域；截图保存在忽略提交的 `test-results/`。
 
 ## 当前边界
 

@@ -1,3 +1,4 @@
+import { PRIVACY_VERSION, RULES_VERSION } from '../content/agreements'
 import {
   canAdminMarkArrival,
   canAdminUndoArrival,
@@ -103,7 +104,8 @@ export function createReservation(
   const { now, id } = runtime(options)
   requireUser(state, userId)
   const member = requireBoundMember(state, userId)
-  if (!input.privacyAccepted) throw new Error('请先同意个人信息收集说明')
+  if (input.privacyAccepted !== true) throw new Error('请先同意《预约信息使用说明》')
+  if (input.rulesAccepted !== true) throw new Error('请先同意《空间使用守则》')
   const idempotencyKey = validateText(input.idempotencyKey, '幂等键', 100)
 
   const existingRequest = state.reservations.find(
@@ -154,6 +156,8 @@ export function createReservation(
     phone: member.phone,
     memberNo: member.memberNo,
     privacyAccepted: true,
+    privacyConsent: { version: PRIVACY_VERSION, acceptedAt: now },
+    rulesConsent: { version: RULES_VERSION, acceptedAt: now },
     status: 'booked',
     idempotencyKey,
     createdAt: now,

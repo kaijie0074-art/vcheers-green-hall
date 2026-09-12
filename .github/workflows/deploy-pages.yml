@@ -36,6 +36,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Test domain and exports
+        run: pnpm test
+
       - name: Build
         run: pnpm exec tsc --noEmit && pnpm exec vite build --base=/vcheers-green-hall/
 

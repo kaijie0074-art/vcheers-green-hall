@@ -56,7 +56,8 @@ test('用户可选择连续时段、即时预约并在开始前取消', async ({
   await page.getByTestId('time-option-18').click()
   await page.getByTestId('duration-2').click()
   await expect(page.getByText('18:00—20:00 · 2 小时')).toBeVisible()
-  await page.getByRole('checkbox').check()
+  await page.getByRole('checkbox', { name: '我已阅读并同意《预约信息使用说明》' }).check()
+  await page.getByRole('checkbox', { name: '我已阅读并同意《空间使用守则》' }).check()
   await page.getByRole('button', { name: '确认预约' }).click()
 
   const success = page.getByRole('dialog', { name: '预约成功' })
