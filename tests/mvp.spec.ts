@@ -177,7 +177,7 @@ test('登录页面保持不变，任意绑定输入或留空均可进入演示�
     await page.reload()
     await expect(page.getByRole('heading', { name: '共享座位预约' })).toBeVisible()
   }
-  await page.getByRole('link', { name: '管理端', exact: true }).click()
+  await page.goto('/?view=admin')
   await page.getByRole('button', { name: '微信管理员登录', exact: true }).click()
   await expect(page.getByRole('heading', { name: '预约管理' })).toBeVisible()
   await page.getByRole('button', { name: '重置数据' }).click()

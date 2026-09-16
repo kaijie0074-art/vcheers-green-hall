@@ -40,14 +40,12 @@ input:disabled { background: #f1ecef; }
 textarea { min-height: 110px; resize: vertical; }
 label b { color: var(--red); }
 
-/* The demo switcher stays distinct from the booking interface. */
+/* Each demo entry identifies its own view without linking to the other role. */
 .prototype-bar { position: sticky; top: 0; z-index: 50; background: var(--purple-soft); border-bottom: 1px solid var(--line); }
 .prototype-inner { max-width: 1320px; min-height: 48px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; gap: 16px; }
 .prototype-note { margin-right: auto; display: flex; align-items: center; gap: 9px; font-size: .875rem; color: #584563; }
 .prototype-dot { width: 8px; height: 8px; flex-shrink: 0; border-radius: 50%; background: var(--purple); }
-.prototype-inner nav { display: flex; align-self: stretch; gap: 4px; }
-.prototype-inner nav a { min-height: 48px; min-width: 88px; padding: 0 12px; display: grid; place-items: center; color: var(--muted); font-size: 1rem; }
-.prototype-inner nav a.active { color: var(--purple-dark); box-shadow: inset 0 -3px var(--purple); font-weight: 650; }
+.prototype-view { color: var(--purple-dark); font-size: 1rem; font-weight: 650; white-space: nowrap; }
 .reset-button { min-width: 44px; min-height: 44px; padding: 0 10px; display: inline-flex; align-items: center; gap: 7px; color: var(--purple-dark); background: transparent; border: 0; border-radius: 8px; font-size: 1rem; }
 .reset-button:hover { background: #e7d9ef; }
 
@@ -171,7 +169,6 @@ label b { color: var(--red); }
 .status-canceled, .member-disabled { color: #655a66; background: #ece7ed; }
 
 /* Operations: spacious rows, no dashboard-card nesting. */
-.admin-member-link { min-height: 44px; display: inline-flex; align-items: center; gap: 5px; color: var(--purple); font-size: 1rem; font-weight: 650; }
 .admin-section-tabs { width: 100%; margin: 0; display: flex; gap: 28px; border-bottom: 1px solid var(--line); }
 .admin-section-tabs button { min-height: 56px; padding: 0 4px; color: var(--muted); background: transparent; border: 0; font-size: 1.125rem; font-weight: 650; }
 .admin-section-tabs button.active { color: var(--purple); box-shadow: inset 0 -4px var(--purple); }
@@ -278,7 +275,6 @@ label b { color: var(--red); }
 
 @media (max-width: 680px) {
   .prototype-inner { padding: 0 12px; gap: 8px; }
-  .prototype-inner nav a { min-width: 68px; padding: 0 8px; }
   .reset-button { width: 44px; padding: 0; justify-content: center; font-size: 0; }
   .site-shell { width: calc(100% - 36px); padding-top: 8px; padding-bottom: 40px; }
   .member-topbar, .admin-topbar { min-height: 80px; }
@@ -304,7 +300,6 @@ label b { color: var(--red); }
   .reservation-card { grid-template-columns: 60px minmax(0, 1fr); gap: 12px; }
   .reservation-card > button, .reservation-card > .action-hint { grid-column: 2; justify-self: start; }
   .reservation-main > div > strong { font-size: 1rem; }
-  .admin-member-link { white-space: nowrap; }
   .admin-section-tabs { gap: 24px; }
   .admin-section-tabs button { font-size: 1rem; }
   .admin-date-controls input { flex: 1; width: 120px; min-width: 0; }

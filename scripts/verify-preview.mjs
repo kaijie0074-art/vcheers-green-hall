@@ -24,6 +24,8 @@ try {
     const entry = new URL(root)
     entry.search = `view=member&verify=${Date.now()}`
     await page.goto(entry.href, { waitUntil: 'networkidle', timeout: 60000 })
+    await expect(page.getByRole('navigation', { name: '角色视图' })).toHaveCount(0)
+    await expect(page.getByRole('link', { name: '管理端', exact: true })).toHaveCount(0)
     await expect(page.getByRole('img', { name: 'V cheers', exact: true })).toBeVisible()
     const resources = await page.evaluate(async () => {
       const logo = document.querySelector('.brand-logo')
@@ -65,9 +67,12 @@ try {
     expect(created.rulesConsent.version).toBe('2026-09-12')
     for (const checkbox of await page.getByRole('checkbox').all()) await expect(checkbox).not.toBeChecked()
 
-    await page.getByRole('link', { name: '管理端', exact: true }).click()
+    const adminEntry = new URL(root)
+    adminEntry.search = `view=admin&verify=${Date.now()}`
+    await page.goto(adminEntry.href, { waitUntil: 'networkidle', timeout: 60000 })
     expect(new URL(page.url()).pathname).toBe(root.pathname)
     await page.getByRole('button', { name: '微信管理员登录', exact: true }).click()
+    await expect(page.getByRole('link', { name: '用户端', exact: true })).toHaveCount(0)
     await page.getByTestId('admin-date-input').fill(created.date)
     const row = page.locator('.admin-record-row').filter({ hasText: '18:00–20:00' })
     await expect(row).toContainText('100001')

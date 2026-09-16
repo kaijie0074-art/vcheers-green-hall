@@ -102,7 +102,6 @@ export function AdminApp() {
 
       <section className="admin-page-heading">
         <div><p>绿厅</p><h1>{section === 'bookings' ? '预约管理' : '会员名册'}</h1></div>
-        <a className="admin-member-link" href={import.meta.env.BASE_URL === '/' ? '/member' : `${import.meta.env.BASE_URL}?view=member`}>用户端 <ChevronRight size={18} /></a>
       </section>
 
       <nav className="admin-section-tabs" aria-label="管理端功能">
