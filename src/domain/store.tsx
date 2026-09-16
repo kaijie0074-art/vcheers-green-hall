@@ -1,8 +1,8 @@
 import { createContext, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createSeedState } from './seed'
 import { migrateDemoMemberNos } from './migrations'
+import { bindDemoMember } from './demoAccess'
 import {
-  bindMember as transitionBindMember,
   cancelReservation as transitionCancelReservation,
   confirmMemberImport as transitionConfirmMemberImport,
   createReservation as transitionCreateReservation,
@@ -162,7 +162,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       bindMember: (memberNo, phoneLastFour) =>
         safely((current) => {
           if (!current.sessions.memberAuthenticated) throw new Error('请先完成微信登录')
-          return transitionBindMember(current, current.currentUserId, memberNo, phoneLastFour)
+          return bindDemoMember(current, memberNo, phoneLastFour)
         }),
       loginAdmin: () => safely((current) => ({
         ...current,

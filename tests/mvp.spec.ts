@@ -163,23 +163,25 @@ test('管理员可导入会员名册并查看绑定状态', async ({ page }) => 
   await expect(row).toContainText('待绑定')
 })
 
-test('绑定只接受完整六位数字，拒绝字母和长度错误且不截断输入', async ({ page }) => {
-  await resetDemo(page, '/member')
-  await page.getByRole('button', { name: '微信授权登录' }).click()
-  const memberInput = page.getByLabel('会员编号', { exact: true })
-
-  for (const invalidId of ['10000A', '10000', '1000017']) {
-    await memberInput.fill(invalidId)
-    await expect(memberInput).toHaveValue(invalidId)
-    await page.getByRole('button', { name: '确认绑定' }).click()
-    await expect(page.getByRole('alert')).toContainText(/6\s*位数字/)
-    await expect(page.getByRole('heading', { name: '绑定会员编号' })).toBeVisible()
-    await page.getByRole('button', { name: '关闭提示' }).click()
+test('登录页面保持不变，任意绑定输入或留空均可进入演示并刷新保留', async ({ page }) => {
+  for (const [number, phone] of [['随便填写', 'abc'], ['1000017', '任意手机号'], ['', '']]) {
+    await resetDemo(page, '/member')
+    await expect(page.getByRole('button', { name: '微信授权登录', exact: true })).toBeVisible()
+    await page.getByRole('button', { name: '微信授权登录', exact: true }).click()
+    await page.getByLabel('会员编号', { exact: true }).fill(number)
+    await page.getByLabel('预留手机号后四位').fill(phone)
+    await expect(page.getByLabel('预留手机号后四位')).toHaveValue(phone)
+    await page.getByRole('button', { name: '确认绑定', exact: true }).click()
+    await expect(page.getByRole('heading', { name: '共享座位预约' })).toBeVisible()
+    await expect(page.locator('.bound-identity-card')).toContainText('100001')
+    await page.reload()
+    await expect(page.getByRole('heading', { name: '共享座位预约' })).toBeVisible()
   }
-
-  await memberInput.fill('100001')
-  await page.getByRole('button', { name: '确认绑定' }).click()
-  await expect(page.getByRole('heading', { name: '共享座位预约' })).toBeVisible()
+  await page.getByRole('link', { name: '管理端', exact: true }).click()
+  await page.getByRole('button', { name: '微信管理员登录', exact: true }).click()
+  await expect(page.getByRole('heading', { name: '预约管理' })).toBeVisible()
+  await page.getByRole('button', { name: '重置数据' }).click()
+  await expect(page.getByRole('button', { name: '微信管理员登录', exact: true })).toBeVisible()
 })
 
 test('导入后可通过用户入口绑定前导零编号，编号保持六位', async ({ page }) => {

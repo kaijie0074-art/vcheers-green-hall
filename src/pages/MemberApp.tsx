@@ -344,7 +344,7 @@ function MemberBindingScreen({
         <h1>绑定会员编号</h1>
         <form onSubmit={(event) => { event.preventDefault(); onBind(memberNo, phoneLastFour) }}>
           <label><span>会员编号</span><input type="text" inputMode="numeric" placeholder="6 位数字" value={memberNo} onChange={(event) => setMemberNo(event.target.value)} autoCapitalize="off" spellCheck={false} /></label>
-          <label><span>预留手机号后四位</span><input value={phoneLastFour} onChange={(event) => setPhoneLastFour(event.target.value.replace(/\D/g, '').slice(0, 4))} inputMode="numeric" maxLength={4} /></label>
+          <label><span>预留手机号后四位</span><input value={phoneLastFour} onChange={(event) => setPhoneLastFour(event.target.value)} inputMode="numeric" /></label>
           <button type="submit" className="primary-button full-button">确认绑定</button>
         </form>
         <div className="demo-credential"><strong>演示资料</strong><span>会员编号 100001，手机号后四位 8001</span></div>

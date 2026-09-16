@@ -44,6 +44,8 @@ try {
     await expect(rulesDialog.locator('li')).toHaveCount(9)
     await rulesDialog.getByRole('button', { name: '关闭', exact: true }).click()
     await page.getByRole('button', { name: '微信授权登录', exact: true }).click()
+    await page.getByLabel('会员编号', { exact: true }).fill('随便体验')
+    await page.getByLabel('预留手机号后四位').fill('any-input')
     await page.getByRole('button', { name: '确认绑定', exact: true }).click()
     await page.getByTestId('date-option-1').click()
     await page.getByTestId('time-option-18').click()
